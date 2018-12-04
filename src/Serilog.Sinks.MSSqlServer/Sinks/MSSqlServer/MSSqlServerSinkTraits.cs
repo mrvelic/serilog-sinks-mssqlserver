@@ -33,9 +33,9 @@ namespace Serilog.Sinks.MSSqlServer
         public ColumnOptions columnOptions { get; }
         public IFormatProvider formatProvider { get; }
         public JsonLogEventFormatter jsonLogEventFormatter { get; }
-        public ISet<string> additionalColumnNames { get; }
+        public IDictionary<string, string> additionalColumnNames { get; }
         public DataTable eventTable { get; }
-        public ISet<string> standardColumnNames { get; }
+        public IDictionary<string, string> standardColumnNames { get; }
 
         public MSSqlServerSinkTraits(string connectionString, string tableName, string schemaName, ColumnOptions columnOptions, IFormatProvider formatProvider, bool autoCreateSqlTable)
         {
@@ -51,17 +51,17 @@ namespace Serilog.Sinks.MSSqlServer
             this.columnOptions = columnOptions ?? new ColumnOptions();
             this.formatProvider = formatProvider;
 
-            standardColumnNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            standardColumnNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var stdCol in this.columnOptions.Store)
             {
                 var col = this.columnOptions.GetStandardColumnOptions(stdCol);
-                standardColumnNames.Add(col.ColumnName);
+                standardColumnNames[col.PropertyName] = col.ColumnName;
             }
 
-            additionalColumnNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            additionalColumnNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (this.columnOptions.AdditionalColumns != null)
                 foreach (var col in this.columnOptions.AdditionalColumns)
-                    additionalColumnNames.Add(col.ColumnName);
+                    additionalColumnNames[col.PropertyName] = col.ColumnName;
 
             if (this.columnOptions.Store.Contains(StandardColumn.LogEvent))
                 jsonLogEventFormatter = new JsonLogEventFormatter(this);
@@ -136,7 +136,7 @@ namespace Serilog.Sinks.MSSqlServer
         {
             if (columnOptions.LogEvent.ExcludeAdditionalProperties)
             {
-                var filteredProperties = logEvent.Properties.Where(p => !additionalColumnNames.Contains(p.Key));
+                var filteredProperties = logEvent.Properties.Where(p => !additionalColumnNames.ContainsKey(p.Key));
                 logEvent = new LogEvent(logEvent.Timestamp, logEvent.Level, logEvent.Exception, logEvent.MessageTemplate, filteredProperties.Select(x => new LogEventProperty(x.Key, x.Value)));
             }
 
@@ -151,7 +151,7 @@ namespace Serilog.Sinks.MSSqlServer
             var options = columnOptions.Properties;
 
             if (options.ExcludeAdditionalProperties)
-                properties = properties.Where(p => !additionalColumnNames.Contains(p.Key));
+                properties = properties.Where(p => !additionalColumnNames.ContainsKey(p.Key));
 
             if (options.PropertiesFilter != null)
             {
@@ -202,10 +202,11 @@ namespace Serilog.Sinks.MSSqlServer
         {
             foreach (var property in properties)
             {
-                if (!eventTable.Columns.Contains(property.Key) || standardColumnNames.Contains(property.Key))
+                if (!additionalColumnNames.ContainsKey(property.Key) || standardColumnNames.ContainsKey(property.Key))
                     continue;
 
-                var columnName = property.Key;
+                var propertyName = property.Key;
+                var columnName = additionalColumnNames[property.Key];
                 var columnType = eventTable.Columns[columnName].DataType;
 
                 if (!(property.Value is ScalarValue scalarValue))

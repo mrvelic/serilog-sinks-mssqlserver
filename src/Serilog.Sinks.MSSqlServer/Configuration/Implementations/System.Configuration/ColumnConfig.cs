@@ -39,6 +39,13 @@ namespace Serilog.Sinks.MSSqlServer
             set { this["ColumnName"] = value; }
         }
 
+        [ConfigurationProperty("PropertyName")]
+        public virtual string PropertyName
+        {
+            get { return (string)this["PropertyName"]; }
+            set { this["PropertyName"] = value; }
+        }
+
         [ConfigurationProperty("DataType")]
         public string DataType
         {
@@ -73,6 +80,8 @@ namespace Serilog.Sinks.MSSqlServer
 
             // inheritors can override IsRequired; config might not change the names of Standard Columns
             SetProperty.IfProvidedNotEmpty<string>(this, "ColumnName", (val) => sqlColumn.ColumnName = val);
+
+            SetProperty.IfProvidedNotEmpty<string>(this, "PropertyName", (val) => sqlColumn.PropertyName = val);
 
             SetProperty.IfProvidedNotEmpty<string>(this, "DataType", (val) => sqlColumn.SetDataTypeFromConfigString(val));
 

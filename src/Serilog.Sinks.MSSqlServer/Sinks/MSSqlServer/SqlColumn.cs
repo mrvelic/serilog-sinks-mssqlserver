@@ -10,6 +10,7 @@ namespace Serilog.Sinks.MSSqlServer
     {
         private SqlDbType dataType = SqlDbType.VarChar; // backwards-compatibility default
         private string columnName = string.Empty;
+        private string propertyName = string.Empty;
 
         /// <summary>
         /// Default constructor.
@@ -20,12 +21,21 @@ namespace Serilog.Sinks.MSSqlServer
         /// <summary>
         /// Constructor with property initialization.
         /// </summary>
-        public SqlColumn(string columnName, SqlDbType dataType, bool allowNull = true, int dataLength = -1)
+        public SqlColumn(string columnName, string propertyName, SqlDbType dataType, bool allowNull = true, int dataLength = -1)
         {
             ColumnName = columnName;
+            PropertyName = propertyName;
             DataType = dataType;
             AllowNull = allowNull;
             DataLength = dataLength;
+        }
+
+        /// <summary>
+        /// Constructor with property initialization.
+        /// </summary>
+        public SqlColumn(string columnName, SqlDbType dataType, bool allowNull = true, int dataLength = -1)
+            : this(columnName, columnName, dataType, allowNull, dataLength)
+        {
         }
 
         /// <summary>
@@ -60,6 +70,26 @@ namespace Serilog.Sinks.MSSqlServer
             set
             {
                 columnName = value;
+            }
+        }
+
+        /// <summary>
+        /// The name of the property in serilog which corresponds to this column.
+        /// </summary>
+        public string PropertyName
+        {
+            get
+            {
+                if (StandardColumnIdentifier != null)
+                    return StandardColumnIdentifier.ToString();
+
+                return string.IsNullOrWhiteSpace(propertyName)
+                    ? ColumnName
+                    : propertyName;
+            }
+            set
+            {
+                propertyName = value;
             }
         }
 
@@ -123,6 +153,7 @@ namespace Serilog.Sinks.MSSqlServer
                 dataColumn.MaxLength = DataLength;
             }
 
+            dataColumn.ExtendedProperties.Add("PropertyName", PropertyName);
             dataColumn.ExtendedProperties.Add("SqlColumn", this);
             return dataColumn;
         }

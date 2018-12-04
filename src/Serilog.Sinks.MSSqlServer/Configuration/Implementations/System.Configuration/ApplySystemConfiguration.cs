@@ -130,6 +130,7 @@ namespace Serilog.Sinks.MSSqlServer
                 void SetCommonColumnOptions(ColumnConfig source, SqlColumn target)
                 {
                     SetProperty.IfProvidedNotEmpty<string>(source, "ColumnName", (val) => target.ColumnName = val);
+                    SetProperty.IfProvided<string>(source, "PropertyName", (val) => target.PropertyName = val);
                     SetProperty.IfProvided<string>(source, "DataType", (val) => target.SetDataTypeFromConfigString(val));
                     SetProperty.IfProvided<bool>(source, "AllowNull", (val) => target.AllowNull = val);
                     SetProperty.IfProvided<int>(source, "DataLength", (val) => target.DataLength = val);
