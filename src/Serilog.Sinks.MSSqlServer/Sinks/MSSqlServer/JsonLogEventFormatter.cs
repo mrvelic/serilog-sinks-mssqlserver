@@ -104,11 +104,19 @@ namespace Serilog.Sinks.MSSqlServer
             output.Write("}");
         }
 
-        static void WriteProperties(IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output)
+        void WriteProperties(IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output)
         {
-            output.Write(",\"Properties\":{");
+            string precedingDelimiter = ",";
+            if(traits.columnOptions.LogEvent.ExcludeStandardColumns)
+            {
+                precedingDelimiter = "";
+            }
 
-            string precedingDelimiter = "";
+            output.Write(precedingDelimiter);
+            output.Write("\"Properties\":{");
+
+            precedingDelimiter = "";
+
             foreach (var property in properties)
             {
                 output.Write(precedingDelimiter);
